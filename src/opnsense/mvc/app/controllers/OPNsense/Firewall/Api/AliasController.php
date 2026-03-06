@@ -493,4 +493,23 @@ class AliasController extends ApiMutableModelControllerBase
         }
         return $result;
     }
+
+    /**
+     * force geoip download/update and return status details
+     */
+    public function updateGeoIPAction()
+    {
+        if ($this->request->isPost()) {
+            $backend = new Backend();
+            $backend->configdRun('template reload OPNsense/Filter');
+            $backend->configdRun('filter geoip update');
+            $bckresult = json_decode($backend->configdRun('filter refresh_aliases'), true);
+            if (!empty($bckresult['messages'])) {
+                throw new UserException(implode("\n", $bckresult['messages']), gettext("GeoIP"));
+            }
+            $stats = json_decode($backend->configdRun('filter geoip stats'), true) ?? [];
+            return ['status' => 'ok', 'message' => gettext('GeoIP update completed'), 'geoip' => $stats];
+        }
+        return ['status' => 'failed'];
+    }
 }
