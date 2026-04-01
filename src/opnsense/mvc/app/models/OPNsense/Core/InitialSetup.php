@@ -294,8 +294,23 @@ class InitialSetup extends BaseModel
         }
 
         $gateways = new Gateways();
+        $wan_gateway_uuid = null;
+        $wan_gateway_name = '';
+        $used_gateway_names = [];
         foreach ($gateways->gateway_item->iterateItems() as $uuid => $node) {
+            $name = (string)$node->name;
+            if (!empty($name)) {
+                $used_gateway_names[$name] = true;
+            }
             if ($node->interface == 'wan' && $node->ipprotocol == 'inet') {
+                if ($wan_gateway_uuid === null || $name === 'WAN_GW') {
+                    $wan_gateway_uuid = $uuid;
+                    $wan_gateway_name = $name;
+                }
+            }
+        }
+        foreach ($gateways->gateway_item->iterateItems() as $uuid => $node) {
+            if ($node->interface == 'wan' && $node->ipprotocol == 'inet' && $uuid !== $wan_gateway_uuid) {
                 $gateways->gateway_item->del($uuid);
             }
         }
@@ -346,15 +361,21 @@ class InitialSetup extends BaseModel
             $target->interfaces->wan->ipaddr = $parts[0];
             $target->interfaces->wan->subnet = $parts[1];
             if (!$this->interfaces->wan->gateway->isEmpty()) {
+                if (empty($wan_gateway_name)) {
+                    $wan_gateway_name = 'WAN_GW';
+                    for ($idx = 1; !empty($used_gateway_names[$wan_gateway_name]); ++$idx) {
+                        $wan_gateway_name = sprintf('WAN_GW_%d', $idx);
+                    }
+                }
                 $gateways->createOrUpdateGateway([
                     'interface' => 'wan',
                     'gateway' => (string)$this->interfaces->wan->gateway,
-                    'name' => 'WAN_GW',
+                    'name' => $wan_gateway_name,
                     'weight' => '1',
                     'monitor_disable' => '1',
                     'descr' => 'WAN Gateway',
                     'defaultgw' => '1',
-                ]);
+                ], $wan_gateway_uuid);
             }
         }
         $target->interfaces->wan->spoofmac = (string)$this->interfaces->wan->spoofmac;
