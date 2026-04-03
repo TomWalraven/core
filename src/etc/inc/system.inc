@@ -761,6 +761,7 @@ function system_routing_configure($verbose = false, $interface_map = null, $moni
 
             $cmd[] = exec_safe('%s', $rtent['network']);
 
+            /* XXX: fallback for legacy disabled route option. can be removed after a couple of major releases. */
             $route_enabled = isset($rtent['enabled']) ? !empty($rtent['enabled']) : empty($rtent['disabled']);
             if (!$route_enabled) {
                 mwexecfm('/sbin/route delete ' . implode(' ', $cmd));
