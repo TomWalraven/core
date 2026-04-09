@@ -1163,6 +1163,11 @@ function get_staticroutes($returnsubnetsonly = false)
 
     foreach (config_read_array('staticroutes', 'route', false) as $route) {
         if (is_subnet($route['network'])) {
+            /* XXX: fallback for legacy disabled route option. can be removed after a couple of major releases. */
+            $route_disabled = isset($route['enabled']) ? empty($route['enabled']) : !empty($route['disabled']);
+            $route['enabled'] = $route_disabled ? '0' : '1';
+            unset($route['disabled']);
+
             $allstaticroutes[] = $route;
             $allsubnets[] = $route['network'];
         }
