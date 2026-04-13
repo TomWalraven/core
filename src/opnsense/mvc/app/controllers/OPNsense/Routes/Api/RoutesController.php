@@ -115,7 +115,6 @@ class RoutesController extends ApiMutableModelControllerBase
     }
 
     /**
-     * toggle, we can not use our default action here since enabled/disabled are swapped
      * @param string $uuid id to toggled
      * @param string|null $disabled set disabled by default
      * @return array status
@@ -125,22 +124,7 @@ class RoutesController extends ApiMutableModelControllerBase
      */
     public function togglerouteAction($uuid, $enabled = null)
     {
-        $result = array("result" => "failed");
-        if ($this->request->isPost() && $uuid != null) {
-            $node = $this->getModel()->getNodeByReference('route.' . $uuid);
-            if ($node != null) {
-                if ($enabled == '0' || $enabled == '1') {
-                    $node->enabled = (string)$enabled;
-                } elseif ((string)$node->enabled == '1') {
-                    $node->enabled = '0';
-                } else {
-                    $node->enabled = '1';
-                }
-                $result['result'] = (string)$node->enabled == '1' ? 'Enabled' : 'Disabled';
-                $this->save();
-            }
-        }
-        return $result;
+        return $this->toggleBase("route", $uuid, $enabled);
     }
 
     /**
